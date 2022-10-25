@@ -28,7 +28,6 @@ const HeaderTop = styled.div`
     align-items: center;
   }
   .logo_box {
-    width: 200px;
   }
   .logo {
     cursor: pointer;
@@ -131,7 +130,7 @@ function Header({ logoImg }) {
         <div className="left">
           <div className="logo_box">
             <h1 className="logo">
-              <Link href="/">My Text Emoticon</Link>
+              <Link href="/">Realtime Typing Game</Link>
             </h1>
           </div>
           {/* <ul className="menu">
