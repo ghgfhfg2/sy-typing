@@ -175,6 +175,7 @@ export default function Main() {
   if(roomData?.play){
     return (
       <PlayBox>
+        {roomData?.play}
         <ul className="user_list">
           {roomData.user.map((el,idx)=>(
             <li key={idx}>
