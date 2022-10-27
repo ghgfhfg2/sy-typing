@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser, clearUser } from "@redux/actions/user_action";
 import "../styles/globals.css";
@@ -33,6 +33,10 @@ function App({ Component, pageProps }) {
       `${window.innerHeight * 0.01}px`
     );
   };
+
+
+
+
 
   useEffect(() => {
     const handleStart = (url) => {
