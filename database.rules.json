@@ -1,6 +1,9 @@
 {
   "rules": {
+    "room": {
+      ".indexOn": ["roomName"]
+    },
     ".read": true,
-    ".write": true
+    ".write": "auth!=null"
   }
 }

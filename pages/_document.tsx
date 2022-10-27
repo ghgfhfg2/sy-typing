@@ -5,16 +5,16 @@ class MyDocument extends Document {
     return (
       <Html lang="ko">
         <Head>
-          <title>텍스트 이모티콘 모음</title>
+          <title>실시간 타이핑 게임</title>
           <meta
             name="description"
-            content={"특수문자를 이용한 텍스트 이모티콘 모음."}
+            content={"실시간으로 즐기는 타이핑(타자연습) 게임"}
           />
           <meta
             name="viewport"
             content="initial-scale=1.0, width=device-width"
           />
-          <meta property="og:title" content="텍스트 이모티콘 모음" />
+          <meta property="og:title" content="실시간 타이핑 게임" />
           <meta property="og:type" content="website" />
           <script
             async

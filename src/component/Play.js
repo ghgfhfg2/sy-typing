@@ -37,55 +37,52 @@ export default function Main() {
     formState: { errors, isSubmitting },
   } = useForm();
 
-
   const [roomData, setRoomData] = useState();
   useEffect(() => {
-    onValue(ref(db,`room/${router.asPath.split('/')[2]}`),data=>{
+    onValue(ref(db, `room/${router.asPath.split("/")[2]}`), (data) => {
       let obj = {
-        ...data.val()
-      }
+        ...data.val(),
+      };
       let arr = [];
-      for(const key in data.val().user){
+      for (const key in data.val().user) {
         arr.push({
-          nick:data.val().user[key].nick,
-          uid:key
-        })
+          nick: data.val().user[key].nick,
+          uid: key,
+        });
       }
       obj.user = arr;
-      console.log(obj)
-      setRoomData(obj)
-    })
-  }, [])
-  
+      console.log(obj);
+      setRoomData(obj);
+    });
+  }, []);
 
-
-    //페이지 이동시 방폭
-    const routeChangeStart = () => {
-        if(roomData.writer === userInfo.uid){
-          const routerConfirm = confirm('방장이 방을 나가면 방이 삭제됩니다.\n나가시겠습니까?');
-          if(!routerConfirm){
-            router.events.emit('routeChangeError');
-            throw 'Abort route change. Please ignore this error.';
-          }else{
-            remove(ref(db,`room/${roomData.uid}`))
-            toast({
-              position: "top",
-              title: `방이 삭제되었습니다.`,
-              status: "info",
-              duration: 1000,
-              isClosable: true,
-            });
-          }
-        }
-  
+  //페이지 이동시 방폭
+  const routeChangeStart = () => {
+    if (roomData.writer === userInfo.uid) {
+      const routerConfirm = confirm(
+        "방장이 방을 나가면 방이 삭제됩니다.\n나가시겠습니까?"
+      );
+      if (!routerConfirm) {
+        router.events.emit("routeChangeError");
+        throw "Abort route change. Please ignore this error.";
+      } else {
+        remove(ref(db, `room/${roomData.uid}`));
+        toast({
+          position: "top",
+          title: `방이 삭제되었습니다.`,
+          status: "info",
+          duration: 1000,
+          isClosable: true,
+        });
       }
-    useEffect(() => {
-      router.events.on('routeChangeStart', routeChangeStart);
-      return () => {
-        router.events.off('routeChangeStart', routeChangeStart);
-      };
-    }, [roomData,router.events]);
-  
+    }
+  };
+  useEffect(() => {
+    router.events.on("routeChangeStart", routeChangeStart);
+    return () => {
+      router.events.off("routeChangeStart", routeChangeStart);
+    };
+  }, [roomData, router.events]);
 
   const [showWord, setShowWord] = useState("");
   const [wordLeng, setWordLeng] = useState(0);
@@ -129,12 +126,11 @@ export default function Main() {
     }
   };
 
-
   const onPlayGame = () => {
-    update(ref(db,`room/${roomData.uid}`),{
-      play:true
-    })
-  }
+    update(ref(db, `room/${roomData.uid}`), {
+      play: true,
+    });
+  };
 
   const onSubmit = (e) => {
     const answer = e.answer;
@@ -171,42 +167,37 @@ export default function Main() {
       });
     }
   };
-
-  if(roomData?.play){
-    return (
-      <PlayBox>
-        {roomData?.play}
-        <ul className="user_list">
-          {roomData.user.map((el,idx)=>(
-            <li key={idx}>
-              {el.nick}
-            </li>
-          ))}
-        </ul>
-        <div className="text_box">{showWord}</div>
-        <form
-          style={{ width: "100%", paddingTop: "20vh" }}
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <Flex>
-            <Input onInput={onTyping} type="text" {...register("answer")} />
-          </Flex>
-        </form>
-      </PlayBox>
-    );
-  }else{
-    return (
-      <>
-        {roomData?.writer === userInfo?.uid ? (
-          <>
-            <Button onClick={onPlayGame}>게임시작</Button>
-          </>
-        ) : (
-          <>대기중</>
-        )}
-        
-      </>
-    )
-  }
-
+  return (
+    <PlayBox>
+      {roomData?.roomName && <Flex>방 코드네임 : {roomData.roomName}</Flex>}
+      {roomData?.play ? (
+        <>
+          <ul className="user_list">
+            {roomData.user.map((el, idx) => (
+              <li key={idx}>{el.nick}</li>
+            ))}
+          </ul>
+          <div className="text_box">{showWord}</div>
+          <form
+            style={{ width: "100%", paddingTop: "20vh" }}
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <Flex>
+              <Input onInput={onTyping} type="text" {...register("answer")} />
+            </Flex>
+          </form>
+        </>
+      ) : (
+        <>
+          {roomData?.writer === userInfo?.uid ? (
+            <>
+              <Button onClick={onPlayGame}>게임시작</Button>
+            </>
+          ) : (
+            <>대기중</>
+          )}
+        </>
+      )}
+    </PlayBox>
+  );
 }

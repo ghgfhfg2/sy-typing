@@ -1,12 +1,22 @@
 import { Button, Flex, Input, useToast } from "@chakra-ui/react";
-import { ref, set, update } from "firebase/database";
+import {
+  ref,
+  set,
+  update,
+  get,
+  query,
+  orderByValue,
+  equalTo,
+  orderByChild,
+} from "firebase/database";
 import { useRouter } from "next/router";
 import React, { useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import shortid from "shortid";
 import styled from "styled-components";
+import { roomFirst, roomSecond } from "@component/db";
 import { db } from "../firebase";
-import { CommonPopup } from "@component/CommonStyled"
+import { CommonPopup } from "@component/CommonStyled";
 const MainComponent = styled.div`
   display: flex;
   justify-content: center;
@@ -23,11 +33,18 @@ export default function Main() {
 
   const onOpenRoom = () => {
     if (userInfo) {
+      const random = Math.floor(Math.random() * roomFirst.length);
+      const random2 = Math.floor(Math.random() * roomSecond.length);
+      const first = roomFirst[random];
+      const last = roomSecond[random2];
+      const roomName = first + last;
+
       const uid = shortid.generate();
       set(ref(db, `room/${uid}`), {
         uid,
         writer: userInfo.uid,
-        play:false
+        roomName,
+        play: false,
       }).then(() => {
         router.push(`/play/${uid}`);
       });
@@ -42,38 +59,56 @@ export default function Main() {
     }
   };
 
-  const [isEnterPop, setIsEnterPop] = useState(false)
+  const [isEnterPop, setIsEnterPop] = useState(false);
   const onEnterPop = () => {
-    setIsEnterPop(true)
-  }
+    setIsEnterPop(true);
+  };
   const closeEnterPop = () => {
-    setIsEnterPop(false)
-  }
+    setIsEnterPop(false);
+  };
 
-  const roomCode = useRef()
+  const roomCode = useRef();
   const onEnterRoom = () => {
     const code = roomCode.current.value;
-    router.push(`play/${code}`)
-    update(ref(db,`room/${code}/user/${userInfo.uid}`),{
-      nick:userInfo.nick,
-    })
-  }
+    const rRef = query(
+      ref(db, `room`),
+      orderByChild("roomName"),
+      equalTo(code)
+    );
+    get(rRef).then((data) => {
+      let room = {};
+      for (const key in data.val()) {
+        room = {
+          ...data.val()[key],
+        };
+      }
+
+      router.push(`play/${room.uid}`);
+      update(ref(db, `room/${room.uid}/user/${userInfo.uid}`), {
+        nick: userInfo.nick,
+      });
+    });
+  };
 
   return (
     <MainComponent>
       <Button onClick={onOpenRoom}>방 생성</Button>
-      <Button onClick={onEnterPop} ml={2}>방 참여</Button>
-      {isEnterPop &&
+      <Button onClick={onEnterPop} ml={2}>
+        방 참여
+      </Button>
+      {isEnterPop && (
         <CommonPopup>
           <div className="con_box">
             <Input ref={roomCode} placeholder="방 코드를 입력해 주세요." />
             <Flex justifyContent="center" mt={4}>
               <Button onClick={closeEnterPop}>닫기</Button>
-              <Button onClick={onEnterRoom} ml={2}>확인</Button>
+              <Button onClick={onEnterRoom} ml={2}>
+                확인
+              </Button>
             </Flex>
           </div>
         </CommonPopup>
-      }
+      )}
     </MainComponent>
   );
 }
