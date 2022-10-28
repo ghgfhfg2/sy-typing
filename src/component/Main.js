@@ -45,6 +45,9 @@ export default function Main() {
         writer: userInfo.uid,
         roomName,
         play: false,
+        user: {
+          [userInfo.uid]: {nick:userInfo.nick}
+        }
       }).then(() => {
         router.push(`/play/${uid}`);
       });

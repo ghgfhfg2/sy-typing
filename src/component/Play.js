@@ -12,6 +12,7 @@ import {
   onValue,
   off,
   remove,
+  onDisconnect
 } from "firebase/database";
 import { wordList } from "./db";
 import { Button, Flex, Input, Spinner, useToast } from "@chakra-ui/react";
@@ -39,25 +40,34 @@ export default function Main() {
 
   const [roomData, setRoomData] = useState();
   useEffect(() => {
-    onValue(ref(db, `room/${router.asPath.split("/")[2]}`), (data) => {
+    const rRef = ref(db, `room/${router.asPath.split("/")[2]}`)
+    onValue(rRef, (data) => {
       let obj = {
         ...data.val(),
       };
       let arr = [];
-      for (const key in data.val().user) {
+      for (const key in data.val()?.user) {
         arr.push({
           nick: data.val().user[key].nick,
           uid: key,
         });
       }
       obj.user = arr;
-      console.log(obj);
+      console.log(obj)
       setRoomData(obj);
     });
+    return () => {
+      off(rRef)
+    }
   }, []);
+
 
   //페이지 이동시 방폭
   const routeChangeStart = () => {
+    if(!roomData){
+      router.events.emit("routeChangeError");
+      throw "Abort route change. Please ignore this error.";
+    }
     if (roomData.writer === userInfo.uid) {
       const routerConfirm = confirm(
         "방장이 방을 나가면 방이 삭제됩니다.\n나가시겠습니까?"
@@ -75,6 +85,8 @@ export default function Main() {
           isClosable: true,
         });
       }
+    }else{
+      remove(ref(db,`room/${roomData.uid}/user/${userInfo.uid}`))
     }
   };
   useEffect(() => {
@@ -82,7 +94,14 @@ export default function Main() {
     return () => {
       router.events.off("routeChangeStart", routeChangeStart);
     };
-  }, [roomData, router.events]);
+  }, [roomData?.uid,router.events]);
+
+
+  if(roomData && userInfo && roomData.writer !== userInfo.uid){
+    const onRef = onDisconnect(ref(db,`room/${roomData.uid}/user/${userInfo.uid}`))
+    onRef.remove()
+  }
+  
 
   const [showWord, setShowWord] = useState("");
   const [wordLeng, setWordLeng] = useState(0);
@@ -168,15 +187,17 @@ export default function Main() {
     }
   };
   return (
+    <>
+    {roomData &&
     <PlayBox>
-      {roomData?.roomName && <Flex>방 코드네임 : {roomData.roomName}</Flex>}
-      {roomData?.play ? (
+      {roomData.roomName && <Flex>방 코드네임 : {roomData.roomName}</Flex>}
+      <ul className="user_list">
+        {roomData.user.map((el, idx) => (
+          <li key={idx}>{el.nick}</li>
+        ))}
+      </ul>
+      {roomData.play ? (
         <>
-          <ul className="user_list">
-            {roomData.user.map((el, idx) => (
-              <li key={idx}>{el.nick}</li>
-            ))}
-          </ul>
           <div className="text_box">{showWord}</div>
           <form
             style={{ width: "100%", paddingTop: "20vh" }}
@@ -189,7 +210,7 @@ export default function Main() {
         </>
       ) : (
         <>
-          {roomData?.writer === userInfo?.uid ? (
+          {roomData.writer === userInfo?.uid ? (
             <>
               <Button onClick={onPlayGame}>게임시작</Button>
             </>
@@ -198,6 +219,8 @@ export default function Main() {
           )}
         </>
       )}
-    </PlayBox>
+      </PlayBox>
+    }
+    </>
   );
 }

@@ -7,7 +7,7 @@ import "../styles/scss-common.css";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import wrapper from "@redux/store/configureStore";
-import { ChakraProvider, Flex } from "@chakra-ui/react";
+import { ChakraProvider, Flex, useToast } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { app, auth, db } from "src/firebase";
 import { ref, onValue, off, get } from "firebase/database";
@@ -19,6 +19,7 @@ import Loading from "@component/Loading";
 import { setLogo } from "@redux/actions/logo_action";
 
 function App({ Component, pageProps }) {
+  const toast = useToast();
   const storage = getStorage();
   const dispatch = useDispatch();
   const router = useRouter();
@@ -33,8 +34,6 @@ function App({ Component, pageProps }) {
       `${window.innerHeight * 0.01}px`
     );
   };
-
-
 
 
 
@@ -71,10 +70,10 @@ function App({ Component, pageProps }) {
             .then((res) => {
               dispatch(clearUser());
             })
-            .then((res) => router.push("/login"))
             .catch((error) => {
               console.log(error);
             });
+            return
         }
         const userRef = ref(db, `user/${user.uid}`);
         onValue(userRef, (data) => {
@@ -90,7 +89,14 @@ function App({ Component, pageProps }) {
         window.sessionStorage.setItem("isLogin", false);
         dispatch(clearUser());
         if (isPublicPath) {
-          router.push("/login");
+          toast({
+            position: "top",
+            title: `접근할 수 없는 페이지 입니다.`,
+            status: "error",
+            duration: 1000,
+            isClosable: true,
+          });
+          router.push("/");
         }
       }
       setisLoading(false);
