@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { setUser } from "@redux/actions/user_action";
-import { MdFavorite, MdFavoriteBorder } from "react-icons/md";
+import { GiSandsOfTime } from "react-icons/gi";
 import { db } from "../firebase";
 import {
   ref,
@@ -12,10 +12,26 @@ import {
   onValue,
   off,
   remove,
-  onDisconnect
+  onDisconnect,
 } from "firebase/database";
 import { wordList } from "./db";
-import { Button, Flex, Input, Spinner, useToast } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  FormControl,
+  FormErrorMessage,
+  FormLabel,
+  Input,
+  Slider,
+  SliderFilledTrack,
+  SliderMark,
+  SliderThumb,
+  SliderTrack,
+  Spinner,
+  Tooltip,
+  useToast,
+} from "@chakra-ui/react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { useRouter } from "next/router";
@@ -38,9 +54,15 @@ export default function Main() {
     formState: { errors, isSubmitting },
   } = useForm();
 
+  const [sliderValue, setSliderValue] = useState(2);
+
+  const [timeCounter, setTimeCounter] = useState();
+  const [readyCounter, setReadyCounter] = useState();
+  const [timeTxt, setTimeTxt] = useState();
+
   const [roomData, setRoomData] = useState();
   useEffect(() => {
-    const rRef = ref(db, `room/${router.asPath.split("/")[2]}`)
+    const rRef = ref(db, `room/${router?.asPath.split("/")[2]}`);
     onValue(rRef, (data) => {
       let obj = {
         ...data.val(),
@@ -53,18 +75,41 @@ export default function Main() {
         });
       }
       obj.user = arr;
-      console.log(obj)
       setRoomData(obj);
     });
-    return () => {
-      off(rRef)
+    if (roomData?.time) {
+      setTimeCounter(roomData.time * 3);
+      setReadyCounter(3);
     }
-  }, []);
+    return () => {
+      off(rRef);
+    };
+  }, [roomData?.play]);
 
+  //카운터
+  useEffect(() => {
+    if (readyCounter > 0) {
+      setTimeout(() => {
+        setReadyCounter((prev) => prev - 1);
+        setTimeTxt(`${readyCounter}초후 시작합니다.`);
+      }, 1000);
+    }
+    if (readyCounter === 0 && timeCounter > 0) {
+      setTimeout(() => {
+        setTimeCounter((prev) => prev - 1);
+        setTimeTxt(timeCounter);
+      }, 1000);
+    }
+    if (timeCounter === 0) {
+      setTimeout(() => {
+        setTimeTxt("end");
+      }, 1000);
+    }
+  }, [timeCounter, readyCounter]);
 
   //페이지 이동시 방폭
   const routeChangeStart = () => {
-    if(!roomData){
+    if (!roomData) {
       router.events.emit("routeChangeError");
       throw "Abort route change. Please ignore this error.";
     }
@@ -85,8 +130,8 @@ export default function Main() {
           isClosable: true,
         });
       }
-    }else{
-      remove(ref(db,`room/${roomData.uid}/user/${userInfo.uid}`))
+    } else {
+      remove(ref(db, `room/${roomData.uid}/user/${userInfo.uid}`));
     }
   };
   useEffect(() => {
@@ -94,14 +139,14 @@ export default function Main() {
     return () => {
       router.events.off("routeChangeStart", routeChangeStart);
     };
-  }, [roomData?.uid,router.events]);
+  }, [roomData?.uid, router.events]);
 
-
-  if(roomData && userInfo && roomData.writer !== userInfo.uid){
-    const onRef = onDisconnect(ref(db,`room/${roomData.uid}/user/${userInfo.uid}`))
-    onRef.remove()
+  if (roomData && userInfo && roomData.writer !== userInfo.uid) {
+    const onRef = onDisconnect(
+      ref(db, `room/${roomData.uid}/user/${userInfo.uid}`)
+    );
+    onRef.remove();
   }
-  
 
   const [showWord, setShowWord] = useState("");
   const [wordLeng, setWordLeng] = useState(0);
@@ -146,8 +191,11 @@ export default function Main() {
   };
 
   const onPlayGame = () => {
+    const ranIndex = Math.floor(Math.random() * wordLeng) + 1;
     update(ref(db, `room/${roomData.uid}`), {
       play: true,
+      time: sliderValue,
+      wordIndex: ranIndex,
     });
   };
 
@@ -186,41 +234,129 @@ export default function Main() {
       });
     }
   };
+
   return (
     <>
-    {roomData &&
-    <PlayBox>
-      {roomData.roomName && <Flex>방 코드네임 : {roomData.roomName}</Flex>}
-      <ul className="user_list">
-        {roomData.user.map((el, idx) => (
-          <li key={idx}>{el.nick}</li>
-        ))}
-      </ul>
-      {roomData.play ? (
-        <>
-          <div className="text_box">{showWord}</div>
-          <form
-            style={{ width: "100%", paddingTop: "20vh" }}
-            onSubmit={handleSubmit(onSubmit)}
-          >
-            <Flex>
-              <Input onInput={onTyping} type="text" {...register("answer")} />
-            </Flex>
-          </form>
-        </>
-      ) : (
-        <>
-          {roomData.writer === userInfo?.uid ? (
+      {roomData && (
+        <PlayBox>
+          {roomData.roomName && <Flex>방 코드네임 : {roomData.roomName}</Flex>}
+          <ul className="user_list">
+            {roomData.user.map((el, idx) => (
+              <li key={idx}>{el.nick}</li>
+            ))}
+          </ul>
+          {roomData.play ? (
             <>
-              <Button onClick={onPlayGame}>게임시작</Button>
+              <div className="time_counter">{timeTxt}</div>
+              <div className="text_box">{showWord}</div>
+              <form
+                style={{ width: "100%", paddingTop: "20vh" }}
+                onSubmit={handleSubmit(onSubmit)}
+              >
+                <Flex>
+                  <Input
+                    onInput={onTyping}
+                    type="text"
+                    {...register("answer")}
+                    disabled={timeCounter === 0 ? true : false}
+                  />
+                </Flex>
+              </form>
             </>
           ) : (
-            <>대기중</>
+            <>
+              {roomData.writer === userInfo?.uid ? (
+                <>
+                  <form
+                    style={{ width: "100%", paddingTop: "20vh" }}
+                    onSubmit={handleSubmit(onSubmit)}
+                  >
+                    <Flex justifyContent="center" marginTop={10}>
+                      <Flex
+                        maxWidth={400}
+                        width="100%"
+                        flexDirection="column"
+                        alignItems="center"
+                        gap={2}
+                      >
+                        <FormControl isInvalid={errors.time}>
+                          <div className="row_box">
+                            <FormLabel mb={5} className="label" htmlFor="time">
+                              게임시간
+                            </FormLabel>
+                            <Slider
+                              aria-label="slider-ex-4"
+                              defaultValue={sliderValue}
+                              min={1}
+                              mb={10}
+                              max={5}
+                              colorScheme="teal"
+                              onChange={(v) => setSliderValue(v)}
+                            >
+                              <SliderMark
+                                value={1}
+                                mt="4"
+                                ml="-3"
+                                fontSize="sm"
+                              >
+                                1min
+                              </SliderMark>
+                              <SliderMark
+                                value={2}
+                                mt="4"
+                                ml="-3"
+                                fontSize="sm"
+                              >
+                                2min
+                              </SliderMark>
+                              <SliderMark
+                                value={3}
+                                mt="4"
+                                ml="-3"
+                                fontSize="sm"
+                              >
+                                3min
+                              </SliderMark>
+                              <SliderMark
+                                value={4}
+                                mt="4"
+                                ml="-3"
+                                fontSize="sm"
+                              >
+                                4min
+                              </SliderMark>
+                              <SliderMark
+                                value={5}
+                                mt="4"
+                                ml="-3"
+                                fontSize="sm"
+                              >
+                                5min
+                              </SliderMark>
+                              <SliderTrack bg="blue.100">
+                                <SliderFilledTrack bg="blue.600" />
+                              </SliderTrack>
+                              <SliderThumb boxSize={6}>
+                                <Box color="blue.600" as={GiSandsOfTime} />
+                              </SliderThumb>
+                            </Slider>
+                          </div>
+                          <FormErrorMessage>
+                            {errors.time && errors.time.message}
+                          </FormErrorMessage>
+                        </FormControl>
+                        <Button onClick={onPlayGame}>게임시작</Button>
+                      </Flex>
+                    </Flex>
+                  </form>
+                </>
+              ) : (
+                <>대기중</>
+              )}
+            </>
           )}
-        </>
+        </PlayBox>
       )}
-      </PlayBox>
-    }
     </>
   );
 }

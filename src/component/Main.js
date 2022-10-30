@@ -42,12 +42,13 @@ export default function Main() {
       const uid = shortid.generate();
       set(ref(db, `room/${uid}`), {
         uid,
+        time: "",
         writer: userInfo.uid,
         roomName,
         play: false,
         user: {
-          [userInfo.uid]: {nick:userInfo.nick}
-        }
+          [userInfo.uid]: { nick: userInfo.nick },
+        },
       }).then(() => {
         router.push(`/play/${uid}`);
       });
@@ -64,6 +65,16 @@ export default function Main() {
 
   const [isEnterPop, setIsEnterPop] = useState(false);
   const onEnterPop = () => {
+    if (!userInfo) {
+      toast({
+        position: "top",
+        title: `로그인 해야 참여 하실 수 있습니다.`,
+        status: "info",
+        duration: 1000,
+        isClosable: true,
+      });
+      return;
+    }
     setIsEnterPop(true);
   };
   const closeEnterPop = () => {
