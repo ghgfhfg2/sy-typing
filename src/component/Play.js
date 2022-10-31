@@ -88,6 +88,7 @@ export default function Main() {
 
   //카운터
   useEffect(() => {
+    const rRef = ref(db, `room/${router?.asPath.split("/")[2]}`);
     if (readyCounter > 0) {
       setTimeout(() => {
         setReadyCounter((prev) => prev - 1);
@@ -96,6 +97,9 @@ export default function Main() {
     }
     if (readyCounter === 0 && timeCounter > 0) {
       setTimeout(() => {
+        update(rRef, {
+          state: "start",
+        });
         setTimeCounter((prev) => prev - 1);
         setTimeTxt(timeCounter);
       }, 1000);
@@ -208,7 +212,13 @@ export default function Main() {
       const speed = calcNum * count;
       const ranIndex = Math.floor(Math.random() * wordLeng) + 1;
       const updates = {};
-      updates[`wordIndex`] = ranIndex;
+      updates[`room/${roomData.uid}/wordIndex`] = ranIndex;
+      runTransaction(
+        ref(db, `room/${roomData.uid}/user/${userInfo.uid}/point`),
+        (pre) => {
+          return pre ? pre + 1 : 1;
+        }
+      );
       update(ref(db), updates)
         .then(() => {
           setValue("answer", "");
@@ -248,7 +258,9 @@ export default function Main() {
           {roomData.play ? (
             <>
               <div className="time_counter">{timeTxt}</div>
-              <div className="text_box">{showWord}</div>
+              {roomData.state === "start" && (
+                <div className="text_box">{showWord}</div>
+              )}
               <form
                 style={{ width: "100%", paddingTop: "20vh" }}
                 onSubmit={handleSubmit(onSubmit)}
