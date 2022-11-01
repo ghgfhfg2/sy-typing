@@ -18,6 +18,9 @@ html {
   display: flex;
   flex: 1; }
 
+.container .content_box {
+  background-color: #BEE3F8; }
+
 .content_box {
   flex: 1;
   padding: 3rem; }

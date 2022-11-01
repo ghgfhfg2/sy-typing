@@ -7,6 +7,9 @@
 .container {
   display: flex;
   flex: 1;
+  .content_box{
+    background-color: #BEE3F8;
+  }
 }
 .content_box {
   flex: 1;

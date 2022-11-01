@@ -36,8 +36,59 @@ import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { useRouter } from "next/router";
 const PlayBox = styled.div`
-  padding: 0 1rem;
-  height: calc(100vh - 60px);
+  background:#fff;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  padding: 2rem;
+  position:relative;
+  border-radius:10px;  
+  width:100vw;max-width:1000px;
+  margin:0 auto;
+  .code_name{width:100%;
+    margin-bottom:1rem;
+    font-size:1rem;font-weight:600;
+    padding-left:1rem;
+  }
+  .user_list{
+    padding:10px;
+    padding-right:15px;
+    border-right:1px solid #ddd;
+    border-radius:5px;
+    li{
+      display:flex;align-items:center;
+      &.header{
+        & > span.user{justify-content:center;width:100px;}
+      }
+      & > span{
+        flex-shrink:0;
+        padding:0 5px;
+        min-width:50px;
+        display:flex;justify-content:center;align-items:center;
+      }
+      &.body{margin-top:10px;
+        & > span.user{overflow:hidden;justify-content:flex-start;
+          text-overflow:ellipsis;white-space: nowrap;
+          display:block;width:100px;
+        }
+      }
+    }
+  }
+  .game_box{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    height:60vh;
+    min-height:300px;
+    justify-content:space-between;align-items:center;
+    .time_counter{
+      padding:1rem;border:2px solid #ddd;
+      width:200px;display:flex;justify-content:center;
+      font-weight:bold
+    }
+    .text_box{padding:2rem;box-shadow:0 0 5px rgba(0,0,0,0.25);
+      border-radius:7px;border:1px solid #ddd;
+      font-size:20px;font-weight:600;
+    }
+  }
 `;
 
 export default function Main() {
@@ -71,14 +122,17 @@ export default function Main() {
       for (const key in data.val()?.user) {
         arr.push({
           nick: data.val().user[key].nick,
+          point: data.val().user[key].point || 0,
+          speed: data.val().user[key].speed || 0,
           uid: key,
         });
       }
+      arr = arr.sort((a,b)=>b.point - a.point);
       obj.user = arr;
       setRoomData(obj);
     });
     if (roomData?.time) {
-      setTimeCounter(roomData.time * 3);
+      setTimeCounter(roomData.time * 60);
       setReadyCounter(3);
     }
     return () => {
@@ -158,18 +212,19 @@ export default function Main() {
     get(ref(db, `wordLength`)).then((data) => {
       setWordLeng(data.val());
     });
-
-    const iRef = ref(db, `wordIndex`);
-    onValue(iRef, (data) => {
-      const index = data.val();
-      get(ref(db, `words/${index}`)).then((data) => {
-        setShowWord(data.val());
+    if(roomData){
+      const iRef = ref(db, `room/${roomData.uid}/wordIndex`);
+      onValue(iRef, (data) => {
+        const index = data.val();
+        setShowWord(wordList[index]);
       });
-    });
+    }
     return () => {
-      off(iRef);
+      if(roomData){
+        off(ref(db, `room/${roomData.uid}/wordIndex`));
+      }
     };
-  }, []);
+  }, [roomData]);
 
   const [timer, setTimer] = useState();
   const [count, setCount] = useState(0);
@@ -213,12 +268,26 @@ export default function Main() {
       const ranIndex = Math.floor(Math.random() * wordLeng) + 1;
       const updates = {};
       updates[`room/${roomData.uid}/wordIndex`] = ranIndex;
-      runTransaction(
-        ref(db, `room/${roomData.uid}/user/${userInfo.uid}/point`),
-        (pre) => {
-          return pre ? pre + 1 : 1;
+
+      const userPath = `room/${roomData.uid}/user/${userInfo.uid}`
+      get(ref(db,`${userPath}`))
+      .then(data=>{
+        const newPoint = data.val().point ? data.val().point + 1 : 1;
+        const oldSpeed = data.val().speed || 0;
+        const newSpeed = Math.floor((oldSpeed * data.val().point + speed)/newPoint);
+        if(oldSpeed){
+          update(ref(db,`${userPath}`),{
+            speed:newSpeed,
+            point:newPoint
+          })
+        }else{
+          update(ref(db,`${userPath}`),{
+            speed,
+            point:newPoint
+          })
         }
-      );
+      })
+      
       update(ref(db), updates)
         .then(() => {
           setValue("answer", "");
@@ -242,48 +311,64 @@ export default function Main() {
         duration: 1000,
         isClosable: true,
       });
+      setCount(0);
+      setTimer("");
+      setValue("answer", "");
     }
   };
 
   return (
-    <>
+    <PlayBox>
       {roomData && (
-        <PlayBox>
-          {roomData.roomName && <Flex>방 코드네임 : {roomData.roomName}</Flex>}
+        <>          
+          {roomData.roomName && 
+            <div className="code_name">
+              방 코드네임 : {roomData.roomName}
+            </div>
+          }
+          <Flex>
           <ul className="user_list">
+            <li className="header">
+              <span className="rank">순위</span>
+              <span className="user">유저</span>
+              <span className="point">점수</span>
+              <span className="speed">평균타수</span>
+            </li>
             {roomData.user.map((el, idx) => (
-              <li key={idx}>{el.nick}</li>
+              <li className="body" key={el.uid}>
+                <span className="rank">{idx+1}</span>
+                <span className="user">{el.nick}</span>
+                <span className="point">{el.point}</span>
+                <span className="speed">{el.speed}</span>
+              </li>
             ))}
           </ul>
           {roomData.play ? (
-            <>
+            <div className="game_box">
               <div className="time_counter">{timeTxt}</div>
               {roomData.state === "start" && (
                 <div className="text_box">{showWord}</div>
               )}
               <form
-                style={{ width: "100%", paddingTop: "20vh" }}
                 onSubmit={handleSubmit(onSubmit)}
               >
                 <Flex>
                   <Input
                     onInput={onTyping}
+                    placeholder="입력 후 enter"
                     type="text"
                     {...register("answer")}
                     disabled={timeCounter === 0 ? true : false}
                   />
                 </Flex>
               </form>
-            </>
+            </div>            
           ) : (
             <>
               {roomData.writer === userInfo?.uid ? (
-                <>
-                  <form
-                    style={{ width: "100%", paddingTop: "20vh" }}
+                <form className="game_box"
                     onSubmit={handleSubmit(onSubmit)}
                   >
-                    <Flex justifyContent="center" marginTop={10}>
                       <Flex
                         maxWidth={400}
                         width="100%"
@@ -359,16 +444,15 @@ export default function Main() {
                         </FormControl>
                         <Button onClick={onPlayGame}>게임시작</Button>
                       </Flex>
-                    </Flex>
                   </form>
-                </>
               ) : (
-                <>대기중</>
+                <div className="game_box">대기중</div>
               )}
             </>
           )}
-        </PlayBox>
+          </Flex>
+        </>
       )}
-    </>
+    </PlayBox>
   );
 }
