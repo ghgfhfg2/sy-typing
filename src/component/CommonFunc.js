@@ -27,12 +27,12 @@ export function numberToKorean(number) {
 export function comma(num) {
   let len, point, str;
   let minus = false;
-  if(num < 0){
-    minus = true
+  if (num < 0) {
+    minus = true;
   }
   num = num + "";
-  if(minus){
-    num = num.substr(1)
+  if (minus) {
+    num = num.substr(1);
   }
   point = num.length % 3;
   len = num.length;
@@ -43,8 +43,8 @@ export function comma(num) {
     str += num.substring(point, point + 3);
     point += 3;
   }
-  if(minus){
-    str = '-' + str
+  if (minus) {
+    str = "-" + str;
   }
   return str;
 }

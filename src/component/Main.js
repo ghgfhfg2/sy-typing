@@ -1,4 +1,4 @@
-import { Button, Flex, Input, useToast } from "@chakra-ui/react";
+import { Button, Checkbox, Flex, Input, useToast } from "@chakra-ui/react";
 import {
   ref,
   set,
@@ -17,6 +17,9 @@ import styled from "styled-components";
 import { roomFirst, roomSecond } from "@component/db";
 import { db } from "../firebase";
 import { CommonPopup } from "@component/CommonStyled";
+import { useForm } from "react-hook-form";
+import { randomName } from "@component/getRandomName";
+import { format } from "date-fns";
 const MainComponent = styled.div`
   display: flex;
   justify-content: center;
@@ -31,18 +34,23 @@ export default function Main() {
 
   const router = useRouter();
 
+  const {
+    setValue,
+    getValues,
+    handleSubmit,
+    register,
+    formState: { errors, isSubmitting },
+  } = useForm();
+
   const onOpenRoom = () => {
     if (userInfo) {
-      const random = Math.floor(Math.random() * roomFirst.length);
-      const random2 = Math.floor(Math.random() * roomSecond.length);
-      const first = roomFirst[random];
-      const last = roomSecond[random2];
-      const roomName = first + last;
+      const roomName = getValues("subject");
 
       const uid = shortid.generate();
       set(ref(db, `room/${uid}`), {
         uid,
         time: "",
+        date: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
         writer: userInfo.uid,
         roomName,
         play: false,
@@ -61,6 +69,16 @@ export default function Main() {
         isClosable: true,
       });
     }
+  };
+
+  const [isOnponePop, setIsOnponePop] = useState(false);
+  const onOpenPop = () => {
+    setIsOnponePop(true);
+    const name = randomName();
+    setValue("subject", name);
+  };
+  const closePop = () => {
+    setIsOnponePop(false);
   };
 
   const [isEnterPop, setIsEnterPop] = useState(false);
@@ -105,24 +123,54 @@ export default function Main() {
   };
 
   return (
-    <MainComponent>
-      <Button onClick={onOpenRoom}>방 생성</Button>
-      <Button onClick={onEnterPop} ml={2}>
-        방 참여
-      </Button>
-      {isEnterPop && (
-        <CommonPopup>
-          <div className="con_box">
-            <Input ref={roomCode} placeholder="방 코드를 입력해 주세요." />
-            <Flex justifyContent="center" mt={4}>
-              <Button onClick={closeEnterPop}>닫기</Button>
-              <Button onClick={onEnterRoom} ml={2}>
-                확인
-              </Button>
-            </Flex>
-          </div>
-        </CommonPopup>
-      )}
-    </MainComponent>
+    <>
+      <MainComponent>
+        {isOnponePop && (
+          <CommonPopup>
+            <form className="game_box" onSubmit={handleSubmit(onOpenRoom)}>
+              <div className="con_box">
+                <Flex>
+                  <Input
+                    id="subject"
+                    className="lg"
+                    readOnly
+                    placeholder="* 제목"
+                    {...register("subject", {
+                      required: "제목은 필수항목 입니다.",
+                    })}
+                  />
+                  <Checkbox flexShrink="0" ml={3} {...register("hidden")}>
+                    비공개
+                  </Checkbox>
+                </Flex>
+                <Flex justifyContent="center" mt={4}>
+                  <Button onClick={closePop}>닫기</Button>
+                  <Button type="submit" ml={2}>
+                    확인
+                  </Button>
+                </Flex>
+              </div>
+            </form>
+          </CommonPopup>
+        )}
+        <Button onClick={onOpenPop}>방 생성</Button>
+        <Button onClick={onEnterPop} ml={2}>
+          방 참여
+        </Button>
+        {isEnterPop && (
+          <CommonPopup>
+            <div className="con_box">
+              <Input ref={roomCode} placeholder="방 코드를 입력해 주세요." />
+              <Flex justifyContent="center" mt={4}>
+                <Button onClick={closeEnterPop}>닫기</Button>
+                <Button onClick={onEnterRoom} ml={2}>
+                  확인
+                </Button>
+              </Flex>
+            </div>
+          </CommonPopup>
+        )}
+      </MainComponent>
+    </>
   );
 }
