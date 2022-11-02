@@ -8,6 +8,7 @@ import {
   orderByValue,
   equalTo,
   orderByChild,
+  onValue,
 } from "firebase/database";
 import { useRouter } from "next/router";
 import React, { useRef, useState } from "react";
@@ -16,10 +17,11 @@ import shortid from "shortid";
 import styled from "styled-components";
 import { roomFirst, roomSecond } from "@component/db";
 import { db } from "../firebase";
-import { CommonPopup } from "@component/CommonStyled";
+import { CommonPopup,RoomList } from "@component/CommonStyled";
 import { useForm } from "react-hook-form";
 import { randomName } from "@component/getRandomName";
-import { format } from "date-fns";
+import { format, getTime } from "date-fns";
+import { HiOutlineArrowSmRight } from "react-icons/hi"
 const MainComponent = styled.div`
   display: flex;
   justify-content: center;
@@ -82,6 +84,7 @@ export default function Main() {
   };
 
   const [isEnterPop, setIsEnterPop] = useState(false);
+  const [openRoomList, setOpenRoomList] = useState()
   const onEnterPop = () => {
     if (!userInfo) {
       toast({
@@ -92,34 +95,56 @@ export default function Main() {
         isClosable: true,
       });
       return;
+    }else{
+      const rRef = query(ref(db,`room`),orderByChild('play'),equalTo(false))
+      onValue(rRef, data=>{
+        const list = data.val();
+        let arr = [];
+        for(const key in list){
+          arr.push(list[key])
+        }
+        arr = arr.sort((a,b)=>{
+          const aTime = getTime(new Date(a.date))
+          const bTime = getTime(new Date(b.date))
+          return bTime - aTime;
+        })
+        setOpenRoomList(arr)
+      })
+      setIsEnterPop(true);
     }
-    setIsEnterPop(true);
   };
   const closeEnterPop = () => {
     setIsEnterPop(false);
   };
 
   const roomCode = useRef();
-  const onEnterRoom = () => {
-    const code = roomCode.current.value;
-    const rRef = query(
-      ref(db, `room`),
-      orderByChild("roomName"),
-      equalTo(code)
-    );
-    get(rRef).then((data) => {
-      let room = {};
-      for (const key in data.val()) {
-        room = {
-          ...data.val()[key],
-        };
-      }
-
-      router.push(`play/${room.uid}`);
-      update(ref(db, `room/${room.uid}/user/${userInfo.uid}`), {
+  const onEnterRoom = (uid) => {
+    if(uid){
+      router.push(`play/${uid}`);
+      update(ref(db, `room/${uid}/user/${userInfo.uid}`), {
         nick: userInfo.nick,
       });
-    });
+
+    }else{
+      const code = roomCode.current.value;
+      const rRef = query(
+        ref(db, `room`),
+        orderByChild("roomName"),
+        equalTo(code)
+      );
+      get(rRef).then((data) => {
+        let room = {};
+        for (const key in data.val()) {
+          room = {
+            ...data.val()[key],
+          };
+        }
+        router.push(`play/${room.uid}`);
+        update(ref(db, `room/${room.uid}/user/${userInfo.uid}`), {
+          nick: userInfo.nick,
+        });
+      });
+    }
   };
 
   return (
@@ -160,7 +185,18 @@ export default function Main() {
         {isEnterPop && (
           <CommonPopup>
             <div className="con_box">
-              <Input ref={roomCode} placeholder="방 코드를 입력해 주세요." />
+              {openRoomList && openRoomList.length > 0 && 
+                <RoomList>
+                  <h2>공개방</h2>
+                  {openRoomList.map((el,idx)=>(
+                    <li key={el.uid} onClick={()=>onEnterRoom(el.uid)}>
+                      {el.roomName}
+                      <HiOutlineArrowSmRight />
+                    </li>
+                  ))}
+                </RoomList>
+              }
+              <Input ref={roomCode} placeholder="방 코드로 입장" />
               <Flex justifyContent="center" mt={4}>
                 <Button onClick={closeEnterPop}>닫기</Button>
                 <Button onClick={onEnterRoom} ml={2}>

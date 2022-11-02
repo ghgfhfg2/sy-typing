@@ -1,7 +1,7 @@
 {
   "rules": {
     "room": {
-      ".indexOn": ["roomName"]
+      ".indexOn": ["roomName","play"]
     },
     ".read": true,
     ".write": "auth!=null"

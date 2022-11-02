@@ -1,36 +1,20 @@
 import styled from "styled-components";
 
-export const EmoticonList = styled.ul`
+export const RoomList = styled.ul`
   display: flex;
-  flex-wrap: wrap;
+  flex-direction:column;
   justify-content: center;
+  margin-bottom:10px;
+  h2{font-size:16px;font-weight:600;padding:0 5px;margin-bottom:5px}
   li {
     display: flex;
-    align-items: stretch;
+    justify-content:space-between;
+    align-items: center;
     cursor: pointer;
     border: 1px solid #ddd;
-    border-radius: 3px;
+    border-radius: 5px;
     margin: 4px;
-    button {
-      border: 0;
-      background: none;
-      cursor: pointer;
-      &:hover {
-        background: #f5f5f5;
-      }
-    }
-    .btn_emo {
-      padding: 8px 12px;
-    }
-    .btn_favor {
-      border: 0;
-      padding-top: 5px;
-      padding: 5px 8px 0 8px;
-      background: none;
-      color: #c53030;
-      font-size: 16px;
-      border-left: 1px solid #ddd;
-    }
+    padding: 0.5rem 1rem;
   }
 `;
 

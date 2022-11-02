@@ -14,7 +14,7 @@ import {
   remove,
   onDisconnect,
 } from "firebase/database";
-import { wordList } from "./db";
+import { enWord, enWord2, roomFirst, roomSecond, wordList } from "./db";
 import {
   Box,
   Button,
@@ -23,18 +23,22 @@ import {
   FormErrorMessage,
   FormLabel,
   Input,
+  Radio,
+  RadioGroup,
   Slider,
   SliderFilledTrack,
   SliderMark,
   SliderThumb,
   SliderTrack,
   Spinner,
+  Stack,
   Tooltip,
   useToast,
 } from "@chakra-ui/react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { useRouter } from "next/router";
+import { getRanWord } from "./getRandomName";
 const PlayBox = styled.div`
   background: #fff;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
@@ -134,6 +138,11 @@ export default function Main() {
   const [timeTxt, setTimeTxt] = useState();
 
   const [roomData, setRoomData] = useState();
+
+  const [showWord, setShowWord] = useState("");
+  const [wordLeng, setWordLeng] = useState(0);
+  const [wordLeng2, setWordLeng2] = useState(0);
+
   useEffect(() => {
     const rRef = ref(db, `room/${router?.asPath.split("/")[2]}`);
     onValue(rRef, (data) => {
@@ -152,25 +161,33 @@ export default function Main() {
       arr = arr.sort((a, b) => b.point - a.point);
       obj.user = arr;
       if (!obj.uid) {
-        toast({
-          position: "top",
-          title: `방이 삭제되었습니다.`,
-          status: "info",
-          duration: 1000,
-          isClosable: true,
-        });
         router.push("/");
       }
       setRoomData(obj);
+      if(data.val()?.wordIndex){
+        const idx = data.val().wordIndex[0];
+        const idx2 = data.val().wordIndex[1];
+        const leng = data.val().wordLeng[0];
+        const leng2 = data.val().wordLeng[1];
+        setWordLeng(leng);
+        setWordLeng2(leng2);
+        setShowWord(getRanWord(idx,idx2,data.val().type))
+      }
+      
     });
-    if (roomData?.time) {
-      setTimeCounter(roomData.time * 60);
-      setReadyCounter(3);
-    }
     return () => {
       off(rRef);
     };
-  }, [roomData?.play]);
+  }, []);
+
+
+  useEffect(() => {
+    if (roomData?.play === true) {
+      setTimeCounter(roomData.time * 60);
+      setReadyCounter(3);
+    }
+  }, [roomData?.play])
+  
 
   //카운터
   useEffect(() => {
@@ -183,11 +200,13 @@ export default function Main() {
     }
     if (readyCounter === 0 && timeCounter > 0) {
       setTimeout(() => {
-        update(rRef, {
-          state: "start",
-        });
-        setTimeCounter((prev) => prev - 1);
-        setTimeTxt(timeCounter);
+        if(roomData.uid){
+          update(rRef, {
+            state: "start",
+          });
+          setTimeCounter((prev) => prev - 1);
+          setTimeTxt(timeCounter);
+        }
       }, 1000);
     }
     if (timeCounter === 0) {
@@ -244,26 +263,6 @@ export default function Main() {
     }
   }
 
-  const [showWord, setShowWord] = useState("");
-  const [wordLeng, setWordLeng] = useState(0);
-  useEffect(() => {
-    get(ref(db, `wordLength`)).then((data) => {
-      setWordLeng(data.val());
-    });
-    if (roomData) {
-      const iRef = ref(db, `room/${roomData.uid}/wordIndex`);
-      onValue(iRef, (data) => {
-        const index = data.val();
-        setShowWord(wordList[index]);
-      });
-    }
-    return () => {
-      if (roomData) {
-        off(ref(db, `room/${roomData.uid}/wordIndex`));
-      }
-    };
-  }, [roomData]);
-
   const [timer, setTimer] = useState();
   const [count, setCount] = useState(0);
   const onTyping = (e) => {
@@ -287,12 +286,32 @@ export default function Main() {
     }
   };
 
+  const [typeState, setTypeState] = useState('1');
+  const onTypeChange = (e) => {
+    setTypeState(e)
+  }
   const onPlayGame = () => {
-    const ranIndex = Math.floor(Math.random() * wordLeng) + 1;
+    let wordLeng;
+    let wordLeng2;
+    let ranIndex;
+    let ranIndex2;
+    if(typeState === '1'){
+      wordLeng = roomFirst.length;
+      wordLeng2 = roomSecond.length;
+      ranIndex = Math.floor(Math.random() * wordLeng) -1;
+      ranIndex2 = Math.floor(Math.random() * wordLeng2) - 1;
+    }else{
+      wordLeng = enWord.length;
+      wordLeng2 = enWord2.length;
+      ranIndex = Math.floor(Math.random() * wordLeng) - 1;
+      ranIndex2 = Math.floor(Math.random() * wordLeng2) - 1;
+    }
     update(ref(db, `room/${roomData.uid}`), {
       play: true,
       time: sliderValue,
-      wordIndex: ranIndex,
+      type:typeState,
+      wordLeng: [wordLeng,wordLeng2],
+      wordIndex: [ranIndex,ranIndex2],
     });
   };
 
@@ -303,9 +322,10 @@ export default function Main() {
       const distanceTime = lastTime - timer;
       const calcNum = Math.floor(60000 / distanceTime);
       const speed = calcNum * count;
-      const ranIndex = Math.floor(Math.random() * wordLeng) + 1;
+      const ranIndex = Math.floor(Math.random() * wordLeng);
+      const ranIndex2 = Math.floor(Math.random() * wordLeng2);
       const updates = {};
-      updates[`room/${roomData.uid}/wordIndex`] = ranIndex;
+      updates[`room/${roomData.uid}/wordIndex`] = [ranIndex,ranIndex2];
 
       const userPath = `room/${roomData.uid}/user/${userInfo.uid}`;
       get(ref(db, `${userPath}`)).then((data) => {
@@ -380,7 +400,7 @@ export default function Main() {
                 </li>
               ))}
             </ul>
-            {roomData.play ? (
+            {roomData.play === true ? (
               <div className="game_box">
                 <div className="time_counter">{timeTxt}</div>
                 {roomData.state === "start" && (
@@ -450,6 +470,22 @@ export default function Main() {
                           {errors.time && errors.time.message}
                         </FormErrorMessage>
                       </FormControl>
+
+                      <FormControl isInvalid={errors.type}>
+                        <RadioGroup defaultValue={typeState} mb={5}
+                          onChange={onTypeChange}
+                          value={typeState}
+                        >
+                          <Stack spacing='20px' direction='row'>
+                            <Radio value='1'>한글</Radio>
+                            <Radio value='2'>영어</Radio>
+                          </Stack>
+                        </RadioGroup>
+                        <FormErrorMessage>
+                          {errors.type && errors.type.message}
+                        </FormErrorMessage>
+                      </FormControl>
+                      
                       <Button onClick={onPlayGame}>게임시작</Button>
                     </Flex>
                   </form>
