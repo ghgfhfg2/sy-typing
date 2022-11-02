@@ -1,4 +1,16 @@
-import { Button, Checkbox, Flex, Input, useToast } from "@chakra-ui/react";
+import {
+  Button,
+  Checkbox,
+  Flex,
+  FormControl,
+  FormErrorMessage,
+  FormLabel,
+  Input,
+  Radio,
+  RadioGroup,
+  Stack,
+  useToast,
+} from "@chakra-ui/react";
 import {
   ref,
   set,
@@ -17,11 +29,11 @@ import shortid from "shortid";
 import styled from "styled-components";
 import { roomFirst, roomSecond } from "@component/db";
 import { db } from "../firebase";
-import { CommonPopup,RoomList } from "@component/CommonStyled";
+import { CommonPopup, RoomList } from "@component/CommonStyled";
 import { useForm } from "react-hook-form";
 import { randomName } from "@component/getRandomName";
 import { format, getTime } from "date-fns";
-import { HiOutlineArrowSmRight } from "react-icons/hi"
+import { HiOutlineArrowSmRight } from "react-icons/hi";
 const MainComponent = styled.div`
   display: flex;
   justify-content: center;
@@ -44,6 +56,11 @@ export default function Main() {
     formState: { errors, isSubmitting },
   } = useForm();
 
+  const [modeState, setModeState] = useState("1");
+  const onModeChange = (e) => {
+    setModeState(e);
+  };
+
   const onOpenRoom = () => {
     if (userInfo) {
       const roomName = getValues("subject");
@@ -55,6 +72,7 @@ export default function Main() {
         date: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
         writer: userInfo.uid,
         roomName,
+        mode: modeState,
         play: false,
         user: {
           [userInfo.uid]: { nick: userInfo.nick },
@@ -84,7 +102,7 @@ export default function Main() {
   };
 
   const [isEnterPop, setIsEnterPop] = useState(false);
-  const [openRoomList, setOpenRoomList] = useState()
+  const [openRoomList, setOpenRoomList] = useState();
   const onEnterPop = () => {
     if (!userInfo) {
       toast({
@@ -95,21 +113,21 @@ export default function Main() {
         isClosable: true,
       });
       return;
-    }else{
-      const rRef = query(ref(db,`room`),orderByChild('play'),equalTo(false))
-      onValue(rRef, data=>{
+    } else {
+      const rRef = query(ref(db, `room`), orderByChild("play"), equalTo(false));
+      onValue(rRef, (data) => {
         const list = data.val();
         let arr = [];
-        for(const key in list){
-          arr.push(list[key])
+        for (const key in list) {
+          arr.push(list[key]);
         }
-        arr = arr.sort((a,b)=>{
-          const aTime = getTime(new Date(a.date))
-          const bTime = getTime(new Date(b.date))
+        arr = arr.sort((a, b) => {
+          const aTime = getTime(new Date(a.date));
+          const bTime = getTime(new Date(b.date));
           return bTime - aTime;
-        })
-        setOpenRoomList(arr)
-      })
+        });
+        setOpenRoomList(arr);
+      });
       setIsEnterPop(true);
     }
   };
@@ -119,13 +137,12 @@ export default function Main() {
 
   const roomCode = useRef();
   const onEnterRoom = (uid) => {
-    if(uid){
+    if (uid) {
       router.push(`play/${uid}`);
       update(ref(db, `room/${uid}/user/${userInfo.uid}`), {
         nick: userInfo.nick,
       });
-
-    }else{
+    } else {
       const code = roomCode.current.value;
       const rRef = query(
         ref(db, `room`),
@@ -168,6 +185,26 @@ export default function Main() {
                     비공개
                   </Checkbox>
                 </Flex>
+                <FormControl isInvalid={errors.mode}>
+                  <Flex mt={5}>
+                    <FormLabel pl={1} mr={5} className="label">
+                      게임모드
+                    </FormLabel>
+                    <RadioGroup
+                      defaultValue={modeState}
+                      onChange={onModeChange}
+                      value={modeState}
+                    >
+                      <Stack spacing="20px" direction="row">
+                        <Radio value="1">기본</Radio>
+                        <Radio value="2">흩뿌리기</Radio>
+                      </Stack>
+                    </RadioGroup>
+                  </Flex>
+                  <FormErrorMessage>
+                    {errors.mode && errors.mode.message}
+                  </FormErrorMessage>
+                </FormControl>
                 <Flex justifyContent="center" mt={4}>
                   <Button onClick={closePop}>닫기</Button>
                   <Button type="submit" ml={2}>
@@ -185,17 +222,17 @@ export default function Main() {
         {isEnterPop && (
           <CommonPopup>
             <div className="con_box">
-              {openRoomList && openRoomList.length > 0 && 
+              {openRoomList && openRoomList.length > 0 && (
                 <RoomList>
                   <h2>공개방</h2>
-                  {openRoomList.map((el,idx)=>(
-                    <li key={el.uid} onClick={()=>onEnterRoom(el.uid)}>
+                  {openRoomList.map((el, idx) => (
+                    <li key={el.uid} onClick={() => onEnterRoom(el.uid)}>
                       {el.roomName}
                       <HiOutlineArrowSmRight />
                     </li>
                   ))}
                 </RoomList>
-              }
+              )}
               <Input ref={roomCode} placeholder="방 코드로 입장" />
               <Flex justifyContent="center" mt={4}>
                 <Button onClick={closeEnterPop}>닫기</Button>
