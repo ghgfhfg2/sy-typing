@@ -2,13 +2,18 @@ import styled from "styled-components";
 
 export const RoomList = styled.ul`
   display: flex;
-  flex-direction:column;
+  flex-direction: column;
   justify-content: center;
-  margin-bottom:10px;
-  h2{font-size:16px;font-weight:600;padding:0 5px;margin-bottom:5px}
+  margin-bottom: 10px;
+  h2 {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 0 5px;
+    margin-bottom: 5px;
+  }
   li {
     display: flex;
-    justify-content:space-between;
+    justify-content: space-between;
     align-items: center;
     cursor: pointer;
     border: 1px solid #ddd;
@@ -62,5 +67,84 @@ export const CommonPopup = styled.div`
     to {
       transform: translateY(0);
     }
+  }
+`;
+
+export const PlayBox = styled.div`
+  background: #fff;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  padding: 2rem;
+  position: relative;
+  border-radius: 10px;
+  width: 100vw;
+  max-width: 1000px;
+  margin: 0 auto;
+  .code_name {
+    width: 100%;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    padding-left: 1rem;
+  }
+  .user_list {
+    padding: 10px;
+    padding-right: 15px;
+    border-right: 1px solid #ddd;
+    border-radius: 5px;
+    li {
+      display: flex;
+      align-items: center;
+      &.header {
+        & > span.user {
+          justify-content: center;
+          width: 100px;
+        }
+      }
+      & > span {
+        flex-shrink: 0;
+        padding: 0 5px;
+        min-width: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      &.body {
+        margin-top: 10px;
+        & > span.user {
+          overflow: hidden;
+          justify-content: flex-start;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          display: block;
+          width: 100px;
+        }
+      }
+    }
+  }
+  .game_box {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 60vh;
+    min-height: 300px;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    .time_counter {
+      padding: 1rem;
+      border: 2px solid #ddd;
+      width: 200px;
+      display: flex;
+      justify-content: center;
+      font-weight: bold;
+    }
+  }
+  .text_box {
+    padding: 2rem;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.25);
+    border-radius: 7px;
+    border: 1px solid #ddd;
+    font-size: 20px;
+    font-weight: 600;
   }
 `;
