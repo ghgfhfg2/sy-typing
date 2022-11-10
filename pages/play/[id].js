@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Play from "@component/Play";
 import GameMode2 from "@component/GameMode2";
+import GameMode3 from "@component/GameMode3";
 import { db } from "../../src/firebase";
 import { useRouter } from "next/router";
 import {
@@ -32,6 +33,9 @@ export default function PlayPage() {
   }
   if (mode && mode == "2") {
     return <GameMode2 />;
+  }
+  if (mode && mode == "3") {
+    return <GameMode3 />;
   }
   return <></>;
 }
