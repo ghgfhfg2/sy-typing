@@ -60,7 +60,7 @@ const TxtBox = styled.div`
     ${(props) =>
       props.pattern == "2" &&
       css`
-        animation: pattern_2 0.5s Infinite linear;
+        animation: pattern_2 0.6s Infinite linear;
       `}
     ${(props) =>
       props.pattern == "3" &&
@@ -225,8 +225,20 @@ export default function Main() {
       setTimeout(() => {
         setTimeTxt("end");
       }, 1000);
+      setTimeout(() => {
+        gameInit();
+      }, 5000);
     }
   }, [timeCounter, readyCounter]);
+
+  const gameInit = () => {
+    setTimeTxt("end");
+    update(ref(db, `room/${roomData.uid}`), {
+      state: "",
+      play: false,
+    });
+    setTimeTxt("");
+  };
 
   //페이지 이동시 방폭
   const routeChangeStart = () => {

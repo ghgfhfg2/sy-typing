@@ -198,7 +198,7 @@ export default function Main() {
                       <Stack spacing="20px" direction="row">
                         <Radio value="1">기본</Radio>
                         <Radio value="2">흩뿌리기</Radio>
-                        <Radio value="3">테스트</Radio>
+                        <Radio value="3">헬파티</Radio>
                       </Stack>
                     </RadioGroup>
                   </Flex>

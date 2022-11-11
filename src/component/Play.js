@@ -134,8 +134,20 @@ export default function Main() {
       setTimeout(() => {
         setTimeTxt("end");
       }, 1000);
+      setTimeout(() => {
+        gameInit();
+      }, 5000);
     }
   }, [timeCounter, readyCounter]);
+
+  const gameInit = () => {
+    setTimeTxt("end");
+    update(ref(db, `room/${roomData.uid}`), {
+      state: "",
+      play: false,
+    });
+    setTimeTxt("");
+  };
 
   //페이지 이동시 방폭
   const routeChangeStart = () => {
