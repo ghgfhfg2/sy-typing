@@ -108,7 +108,7 @@ export default function Main() {
 
   useEffect(() => {
     if (roomData?.play === true) {
-      setTimeCounter(roomData.time * 6); //임시타이머
+      setTimeCounter(roomData.time * 60);
       setReadyCounter(3);
     }
   }, [roomData?.play]);
