@@ -15,7 +15,9 @@ import { db } from "src/firebase";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { ref, set, onValue } from "firebase/database";
 import { CommonPopup } from "./CommonStyled";
+import Filter from "badwords-ko";
 function Join({ closePop }) {
+  const filter = new Filter();
   const dispatch = useDispatch();
   const auth = getAuth();
   const toast = useToast();
@@ -34,6 +36,17 @@ function Join({ closePop }) {
   }, []);
 
   const onSubmit = (values) => {
+    console.log(values.nick);
+    console.log(filter.isProfane(values.nick));
+    if (filter.isProfane(values.nick)) {
+      toast({
+        description: "닉네임에 비속어가 포함되어 있습니다.",
+        status: "error",
+        duration: 1000,
+        isClosable: false,
+      });
+      return;
+    }
     createUserWithEmailAndPassword(auth, values.email, values.password)
       .then((userCredential) => {
         // Signed in
@@ -94,11 +107,19 @@ function Join({ closePop }) {
                     id="nick"
                     placeholder="닉네임"
                     {...register("nick", {
+                      maxLength: 8,
+                      pattern: /^(?=.*[a-z0-9가-힣])[a-z0-9가-힣]{2,8}$/g,
                       required: "닉네임은 필수항목 입니다.",
                     })}
                   />
                   <FormErrorMessage>
                     {errors.nick && errors.nick.message}
+                    {errors.nick && errors.nick.type === "maxLength" && (
+                      <>닉네임은 최대 8글자 이하 이어야 합니다.</>
+                    )}
+                    {errors.nick && errors.nick.type === "pattern" && (
+                      <>닉네임은 2-8자의 영문,한글로 작성해야 합니다.</>
+                    )}
                   </FormErrorMessage>
                 </FormControl>
                 <FormControl isInvalid={errors.password}>

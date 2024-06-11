@@ -40,6 +40,7 @@ export const CommonPopup = styled.div`
       opacity: 1;
     }
   }
+
   .bg {
     width: 100%;
     height: 100%;
@@ -55,7 +56,7 @@ export const CommonPopup = styled.div`
     padding: 1rem;
     transform: translateY(30px);
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
     z-index: 10;
     animation: fadeUp 0.2s forwards;
   }
@@ -125,7 +126,7 @@ export const PlayBox = styled.div`
     width: 100%;
     display: flex;
     flex-direction: column;
-    height: 60vh;
+    height: auto;
     min-height: 300px;
     justify-content: space-between;
     align-items: center;
@@ -146,5 +147,19 @@ export const PlayBox = styled.div`
     border: 1px solid #ddd;
     font-size: 20px;
     font-weight: 600;
+  }
+
+  @media all and (max-width: 760px) {
+    width: 100%;
+    padding: 1rem;
+    .flex_con {
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .user_list {
+      border-width: 0 0 1px 0;
+      overflow: auto;
+      max-height: 120px;
+    }
   }
 `;

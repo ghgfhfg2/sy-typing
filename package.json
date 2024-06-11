@@ -14,6 +14,7 @@
     "@chakra-ui/react": "^2.3.1",
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",
+    "badwords-ko": "^1.0.4",
     "browser-image-compression": "^2.0.0",
     "date-fns": "^2.29.2",
     "firebase": "^9.9.4",

@@ -7,8 +7,8 @@
 .container {
   display: flex;
   flex: 1;
-  .content_box{
-    background-color: #BEE3F8;
+  .content_box {
+    background-color: #bee3f8;
   }
 }
 .content_box {
@@ -159,4 +159,11 @@ footer.footer {
 .sun-editor-editable table.table_basic td,
 .sun-editor-editable table.table_basic th {
   padding: 10px 1rem;
+}
+
+@media all and (max-width: 760px) {
+  .content_box {
+    width: 100%;
+    padding: 1rem;
+  }
 }

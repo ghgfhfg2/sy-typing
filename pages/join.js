@@ -79,6 +79,7 @@ function Join() {
                 id="name"
                 placeholder="* 이름"
                 {...register("name", {
+                  maxLength: 8,
                   required: "이름은 필수항목 입니다.",
                 })}
               />

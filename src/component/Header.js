@@ -10,6 +10,7 @@ import { BiUser } from "react-icons/bi";
 import { TbLogout } from "react-icons/tb";
 import Login from "./Login";
 import Join from "./Join";
+import GoogleAd from "./GoogleAd";
 
 const HeaderTop = styled.div`
   width: 100%;
@@ -80,6 +81,14 @@ const HeaderTop = styled.div`
   }
 
   @media screen and (max-width: 768px) {
+    height: auto;
+    padding: 1rem 0;
+    .right {
+      margin-right: 0;
+    }
+    .logo {
+      font-size: 18px;
+    }
     .menu {
       display: none;
     }
@@ -126,6 +135,7 @@ function Header({ logoImg }) {
 
   return (
     <>
+      <GoogleAd />
       <HeaderTop>
         <div className="left">
           <div className="logo_box">
@@ -146,11 +156,11 @@ function Header({ logoImg }) {
                 <span style={{ marginRight: "10px" }}>
                   {userInfo.nick} 님 환영합니다.
                 </span>
-                <Link href="/mypage">
+                {/* <Link href="/mypage">
                   <a>
                     <BiUser style={{ fontSize: "1.2rem" }} />
                   </a>
-                </Link>
+                </Link> */}
               </li>
               <li>
                 <a href="#" onClick={onLogout}>

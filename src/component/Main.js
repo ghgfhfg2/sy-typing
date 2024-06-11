@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Checkbox,
   Flex,
@@ -34,12 +35,15 @@ import { useForm } from "react-hook-form";
 import { randomName } from "@component/getRandomName";
 import { format, getTime } from "date-fns";
 import { HiOutlineArrowSmRight } from "react-icons/hi";
+import RankingPop from "./RankingPop";
 const MainComponent = styled.div`
   display: flex;
+  flex: 1;
   justify-content: center;
   align-items: center;
   width: 100vw;
-  height: calc(100vh - 60px);
+  height: auto;
+  min-height: 50vh;
 `;
 
 export default function Main() {
@@ -61,7 +65,7 @@ export default function Main() {
     setModeState(e);
   };
 
-  const onOpenRoom = () => {
+  const onOpenRoom = (data) => {
     if (userInfo) {
       const roomName = getValues("subject");
 
@@ -74,6 +78,7 @@ export default function Main() {
         roomName,
         mode: modeState,
         play: false,
+        hidden: data.hidden,
         user: {
           [userInfo.uid]: { nick: userInfo.nick },
         },
@@ -119,13 +124,16 @@ export default function Main() {
         const list = data.val();
         let arr = [];
         for (const key in list) {
-          arr.push(list[key]);
+          if (!list[key].hidden) {
+            arr.push(list[key]);
+          }
         }
         arr = arr.sort((a, b) => {
           const aTime = getTime(new Date(a.date));
           const bTime = getTime(new Date(b.date));
           return bTime - aTime;
         });
+        arr.slice(0, 10);
         setOpenRoomList(arr);
       });
       setIsEnterPop(true);
@@ -164,68 +172,90 @@ export default function Main() {
     }
   };
 
+  const [isRankingPop, setIsRankingPop] = useState(false);
+  const onRanking = () => {
+    setIsRankingPop(true);
+  };
+  const closeRankPop = () => {
+    setIsRankingPop(false);
+  };
+
   return (
     <>
       <MainComponent>
         {isOnponePop && (
           <CommonPopup>
-            <form className="game_box" onSubmit={handleSubmit(onOpenRoom)}>
-              <div className="con_box">
-                <Flex>
-                  <Input
-                    id="subject"
-                    className="lg"
-                    readOnly
-                    placeholder="* 제목"
-                    {...register("subject", {
-                      required: "제목은 필수항목 입니다.",
-                    })}
-                  />
-                  <Checkbox flexShrink="0" ml={3} {...register("hidden")}>
-                    비공개
-                  </Checkbox>
+            <form className="con_box" onSubmit={handleSubmit(onOpenRoom)}>
+              <Flex>
+                <Input
+                  id="subject"
+                  className="lg"
+                  readOnly
+                  placeholder="* 제목"
+                  {...register("subject", {
+                    required: "제목은 필수항목 입니다.",
+                  })}
+                />
+                <Checkbox flexShrink="0" ml={3} {...register("hidden")}>
+                  비공개
+                </Checkbox>
+              </Flex>
+              <FormControl isInvalid={errors.mode}>
+                <Flex mt={5}>
+                  <FormLabel pl={1} mr={5} className="label">
+                    게임모드
+                  </FormLabel>
+                  <RadioGroup
+                    defaultValue={modeState}
+                    onChange={onModeChange}
+                    value={modeState}
+                  >
+                    <Stack spacing="20px" direction="row">
+                      <Radio value="1">기본</Radio>
+                      <Radio value="2">흩뿌리기</Radio>
+                      <Radio value="3">헬파티</Radio>
+                    </Stack>
+                  </RadioGroup>
                 </Flex>
-                <FormControl isInvalid={errors.mode}>
-                  <Flex mt={5}>
-                    <FormLabel pl={1} mr={5} className="label">
-                      게임모드
-                    </FormLabel>
-                    <RadioGroup
-                      defaultValue={modeState}
-                      onChange={onModeChange}
-                      value={modeState}
-                    >
-                      <Stack spacing="20px" direction="row">
-                        <Radio value="1">기본</Radio>
-                        <Radio value="2">흩뿌리기</Radio>
-                        <Radio value="3">헬파티</Radio>
-                      </Stack>
-                    </RadioGroup>
-                  </Flex>
-                  <FormErrorMessage>
-                    {errors.mode && errors.mode.message}
-                  </FormErrorMessage>
-                </FormControl>
-                <Flex justifyContent="center" mt={4}>
-                  <Button onClick={closePop}>닫기</Button>
-                  <Button type="submit" ml={2}>
-                    확인
-                  </Button>
-                </Flex>
-              </div>
+                <FormErrorMessage>
+                  {errors.mode && errors.mode.message}
+                </FormErrorMessage>
+              </FormControl>
+              <Flex justifyContent="center" mt={4}>
+                <Button colorScheme="blue" type="submit" mr={2}>
+                  확인
+                </Button>
+                <Button onClick={closePop}>닫기</Button>
+              </Flex>
             </form>
           </CommonPopup>
         )}
-        <Button onClick={onOpenPop}>방 생성</Button>
-        <Button onClick={onEnterPop} ml={2}>
-          방 참여
-        </Button>
+        <Flex
+          flexDirection="column"
+          gap={3}
+          style={{ width: "90vw", maxWidth: "400px" }}
+        >
+          <Button width="100%" onClick={onOpenPop} colorScheme="blue">
+            방 생성
+          </Button>
+          <Button width="100%" onClick={onEnterPop}>
+            방 참여
+          </Button>
+          <Button width="100%" onClick={onRanking} mt={5}>
+            랭킹보기
+          </Button>
+        </Flex>
         {isEnterPop && (
           <CommonPopup>
             <div className="con_box">
               {openRoomList && openRoomList.length > 0 && (
                 <RoomList>
-                  <h2>공개방</h2>
+                  <h2>
+                    공개방
+                    <span style={{ fontSize: "12px", marginLeft: "5px" }}>
+                      *최근 생성된 10개만 노출됩니다.
+                    </span>
+                  </h2>
                   {openRoomList.map((el, idx) => (
                     <li key={el.uid} onClick={() => onEnterRoom(el.uid)}>
                       {el.roomName}
@@ -236,14 +266,15 @@ export default function Main() {
               )}
               <Input ref={roomCode} placeholder="방 코드로 입장" />
               <Flex justifyContent="center" mt={4}>
-                <Button onClick={closeEnterPop}>닫기</Button>
-                <Button onClick={onEnterRoom} ml={2}>
+                <Button onClick={onEnterRoom} mr={2} colorScheme="blue">
                   확인
                 </Button>
+                <Button onClick={closeEnterPop}>닫기</Button>
               </Flex>
             </div>
           </CommonPopup>
         )}
+        {isRankingPop && <RankingPop closeRankPop={closeRankPop} />}
       </MainComponent>
     </>
   );

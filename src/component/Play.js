@@ -13,6 +13,7 @@ import {
   off,
   remove,
   onDisconnect,
+  query,
 } from "firebase/database";
 import { enWord, enWord2, roomFirst, roomSecond, wordList } from "./db";
 import {
@@ -67,6 +68,8 @@ export default function Main() {
   const [wordLeng, setWordLeng] = useState(0);
   const [wordLeng2, setWordLeng2] = useState(0);
 
+  const [gameState, setGameState] = useState(0); // 0: 대기, 1: 진행, 2: 종료
+
   useEffect(() => {
     const rRef = ref(db, `room/${router?.asPath.split("/")[2]}`);
     onValue(rRef, (data) => {
@@ -105,13 +108,16 @@ export default function Main() {
 
   useEffect(() => {
     if (roomData?.play === true) {
-      setTimeCounter(roomData.time * 60);
+      setTimeCounter(roomData.time * 6); //임시타이머
       setReadyCounter(3);
     }
   }, [roomData?.play]);
 
   //카운터
   useEffect(() => {
+    if (gameState !== 1) {
+      return;
+    }
     const rRef = ref(db, `room/${router?.asPath.split("/")[2]}`);
     if (readyCounter > 0) {
       setTimeout(() => {
@@ -132,19 +138,63 @@ export default function Main() {
     }
     if (timeCounter === 0) {
       setTimeout(() => {
-        setTimeTxt("end");
+        gameEnd();
       }, 1000);
-      setTimeout(() => {
-        gameInit();
-      }, 5000);
+      // setTimeout(() => {
+      //   gameInit();
+      // }, 5000);
     }
-  }, [timeCounter, readyCounter]);
+  }, [timeCounter, readyCounter, gameState]);
+
+  const rankingUpdate = async () => {
+    const rankRef = query(
+      ref(db, `ranking/mode_${roomData.type}/time_${roomData.time}`)
+    );
+    const getRankScore = await get(rankRef).then((data) => data.val());
+    const curRankList = roomData.user
+      .map((el) => {
+        el.score = Math.floor(el.point * el.speed);
+        return el;
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+
+    if (!getRankScore) {
+      update(ref(db, `ranking/mode_${roomData.type}/time_${roomData.time}`), {
+        ...curRankList,
+      });
+    } else {
+      const newRankList = [...getRankScore, ...curRankList]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      update(ref(db, `ranking/mode_${roomData.type}/time_${roomData.time}`), {
+        ...newRankList,
+      });
+    }
+  };
+
+  const gameEnd = () => {
+    setTimeTxt("end");
+    setGameState(2);
+    update(ref(db, `room/${roomData.uid}`), {
+      state: "end",
+      play: false,
+    });
+    rankingUpdate(); //랭킹업데이트
+  };
 
   const gameInit = () => {
-    setTimeTxt("end");
+    const scoreInitUser = {};
+    roomData.user.forEach((el) => {
+      el.point = 0;
+      el.speed = 0;
+      scoreInitUser[el.uid] = el;
+    });
+
+    setGameState(0);
     update(ref(db, `room/${roomData.uid}`), {
       state: "",
-      play: false,
+      user: scoreInitUser,
     });
     setTimeTxt("");
   };
@@ -224,7 +274,7 @@ export default function Main() {
     setTypeState(e);
   };
 
-  const onPlayGame = () => {
+  const onPlayGame = async () => {
     let wordLeng;
     let wordLeng2;
     let ranIndex;
@@ -232,21 +282,22 @@ export default function Main() {
     if (typeState === "1") {
       wordLeng = roomFirst.length;
       wordLeng2 = roomSecond.length;
-      ranIndex = Math.floor(Math.random() * wordLeng) - 1;
-      ranIndex2 = Math.floor(Math.random() * wordLeng2) - 1;
+      ranIndex = Math.floor(Math.random() * wordLeng);
+      ranIndex2 = Math.floor(Math.random() * wordLeng2);
     } else {
       wordLeng = enWord.length;
       wordLeng2 = enWord2.length;
-      ranIndex = Math.floor(Math.random() * wordLeng) - 1;
-      ranIndex2 = Math.floor(Math.random() * wordLeng2) - 1;
+      ranIndex = Math.floor(Math.random() * wordLeng);
+      ranIndex2 = Math.floor(Math.random() * wordLeng2);
     }
-    update(ref(db, `room/${roomData.uid}`), {
+    await update(ref(db, `room/${roomData.uid}`), {
       play: true,
       time: sliderValue,
       type: typeState,
       wordLeng: [wordLeng, wordLeng2],
       wordIndex: [ranIndex, ranIndex2],
     });
+    setGameState(1);
   };
 
   const onSubmit = (e) => {
@@ -317,7 +368,7 @@ export default function Main() {
           {roomData.roomName && (
             <div className="code_name">방 코드네임 : {roomData.roomName}</div>
           )}
-          <Flex>
+          <Flex className="flex_con">
             <ul className="user_list">
               <li className="header">
                 <span className="rank">순위</span>
@@ -354,11 +405,12 @@ export default function Main() {
               </div>
             ) : (
               <>
-                {roomData.writer === userInfo?.uid ? (
+                {roomData.writer === userInfo?.uid && gameState === 0 ? (
                   <form className="game_box" onSubmit={handleSubmit(onSubmit)}>
                     <Flex
                       maxWidth={400}
                       width="100%"
+                      minHeight="50vh"
                       flexDirection="column"
                       alignItems="center"
                       gap={2}
@@ -425,6 +477,17 @@ export default function Main() {
                       <Button onClick={onPlayGame}>게임시작</Button>
                     </Flex>
                   </form>
+                ) : roomData.writer === userInfo?.uid && gameState === 2 ? (
+                  <>
+                    <Flex
+                      width="100%"
+                      minHeight="50vh"
+                      justifyContent="center"
+                      alignItems="center"
+                    >
+                      <Button onClick={gameInit}>재경기 하기</Button>
+                    </Flex>
+                  </>
                 ) : (
                   <div className="game_box">대기중</div>
                 )}
