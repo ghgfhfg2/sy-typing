@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import styled from "styled-components";
 import Link from "next/link";
 import { getAuth, signOut } from "firebase/auth";
-import { Image, useToast } from "@chakra-ui/react";
+import { Flex, Image, useToast } from "@chakra-ui/react";
 import { BiUser } from "react-icons/bi";
 import { TbLogout } from "react-icons/tb";
 import Login from "./Login";
@@ -164,7 +164,11 @@ function Header({ logoImg }) {
               </li>
               <li>
                 <a href="#" onClick={onLogout}>
-                  <TbLogout style={{ fontSize: "1.2rem" }} />
+                  <Flex alignItems="center">
+                    <span style={{ fontSize: "12px", marginRight: "5px" }}>
+                      로그아웃
+                    </span>
+                  </Flex>
                 </a>
               </li>
             </>

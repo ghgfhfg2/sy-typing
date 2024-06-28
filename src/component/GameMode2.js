@@ -40,6 +40,8 @@ import { PlayBox } from "@component/CommonStyled";
 import styled from "styled-components";
 import { useRouter } from "next/router";
 import { getRanWord } from "./getRandomName";
+import Link from "next/link";
+import { TbLogout } from "react-icons/tb";
 const PlayBox2 = styled(PlayBox)``;
 const TxtBox = styled.div`
     box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
@@ -354,7 +356,27 @@ export default function Main() {
       {roomData && (
         <>
           {roomData.roomName && (
-            <div className="code_name">방 코드네임 : {roomData.roomName}</div>
+            <Flex alignItems="center" mb={2}>
+              {roomData.roomName && (
+                <div className="code_name">
+                  방 코드네임 : {roomData.roomName}
+                </div>
+              )}
+              <Link href="/">
+                <a
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <span style={{ marginRight: "5px", fontSize: "13px" }}>
+                    방 나가기
+                  </span>
+                  <TbLogout style={{ fontSize: "1.2rem" }} />
+                </a>
+              </Link>
+            </Flex>
           )}
           <Flex>
             <ul className="user_list">

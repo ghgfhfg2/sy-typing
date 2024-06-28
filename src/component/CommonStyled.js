@@ -82,7 +82,6 @@ export const PlayBox = styled.div`
   margin: 0 auto;
   .code_name {
     width: 100%;
-    margin-bottom: 1rem;
     font-size: 1rem;
     font-weight: 600;
     padding-left: 1rem;
@@ -155,6 +154,10 @@ export const PlayBox = styled.div`
     .flex_con {
       flex-direction: column;
       gap: 2rem;
+    }
+    .code_name {
+      padding-left: 0;
+      font-size: 14px;
     }
     .user_list {
       border-width: 0 0 1px 0;

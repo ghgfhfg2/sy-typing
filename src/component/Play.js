@@ -41,6 +41,8 @@ import styled from "styled-components";
 import { useRouter } from "next/router";
 import { getRanWord } from "./getRandomName";
 import { PlayBox } from "@component/CommonStyled";
+import { TbLogout } from "react-icons/tb";
+import Link from "next/link";
 
 export default function Main() {
   const toast = useToast();
@@ -365,9 +367,25 @@ export default function Main() {
     <PlayBox>
       {roomData && (
         <>
-          {roomData.roomName && (
-            <div className="code_name">방 코드네임 : {roomData.roomName}</div>
-          )}
+          <Flex alignItems="center" mb={2}>
+            {roomData.roomName && (
+              <div className="code_name">방 코드네임 : {roomData.roomName}</div>
+            )}
+            <Link href="/">
+              <a
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span style={{ marginRight: "5px", fontSize: "13px" }}>
+                  방 나가기
+                </span>
+                <TbLogout style={{ fontSize: "1.2rem" }} />
+              </a>
+            </Link>
+          </Flex>
           <Flex className="flex_con">
             <ul className="user_list">
               <li className="header">
